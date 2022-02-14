@@ -1,0 +1,42 @@
+
+# install.packages( c("spData", "CARBayes", "sf", "RColorBrewer") )
+library(spData)
+library(CARBayes)
+library(sf)
+library(RColorBrewer)
+
+boston.tr <-st_read(system.file("shapes/boston_tracts.shp", package="spData"))
+w_nb      <-poly2nb( boston.tr )
+w         <-nb2mat(w_nb,style="B")
+
+formula   <- log(CMEDV) ~ CRIM + I(RM^2) + log(LSTAT)
+resLm	    <- S.glm(formula, data=boston.tr, family="gaussian", burnin=5000, n.sample=20000)
+resLm
+
+resLex	  <- S.CARleroux(formula, data=boston.tr, family="gaussian", W=W, burnin=5000, n.sample=20000)
+resLex
+
+resCAR	  <- S.CARleroux(formula, data=boston.tr, rho=1, family="gaussian", W=W, burnin=5000, n.sample=20000)
+resCAR
+
+
+boston.tr$predLm <- exp( resLm$fitted.values )
+boston.tr$predLex<- exp( resLeX$fitted.values)
+boston.tr$predCAR<- exp( resCAR$fitted.values)
+
+nc        <- 10
+breaks    <- seq(0, 55, len=nc+1)
+pal       <- rev(brewer.pal(nc, "RdYlBu"))
+plot(boston.tr[, "CMEDV"]  ,pal=pal,breaks=breaks, axes=TRUE,lwd=0.1)
+plot(boston.tr[, "predLm"] ,pal=pal,breaks=breaks, axes=TRUE,lwd=0.1)
+plot(boston.tr[, "predLex"],pal=pal,breaks=breaks, axes=TRUE,lwd=0.1)
+plot(boston.tr[, "predCAR"],pal=pal,breaks=breaks, axes=TRUE,lwd=0.1)
+
+predLm_samp <-resLm$samples$fitted
+predLex_samp<-resLex$samples$fitted
+predLm_95CI <-apply(predLm_samp ,2,function(x) quantile(x, probs=c(0.025, 0.975)))
+predLex_95CI<-apply(predLex_samp,2,function(x) quantile(x, probs=c(0.025, 0.975)))
+
+predLm_95CI[,1:8]
+predLex_95CI[,1:8]
+
