@@ -1,0 +1,54 @@
+
+# install.packages( c("GWmodel", "gstat" ) )
+library(GWmodel, dep=TRUE)
+library(gstat, dep=TRUE)
+
+##### Meuse data
+data(meuse)
+meuse$ffreq2 <- ifelse(meuse$ffreq ==2, 1, 0)
+meuse$ffreq3 <- ifelse(meuse$ffreq ==3, 1, 0)
+meuse$soil2  <- ifelse(meuse$soil  ==2, 1, 0)
+meuse$soil3  <- ifelse(meuse$soil  ==3, 1, 0)
+meuse[1:5,]
+
+##### Geographically weighted regression
+formula  <-log(zinc) ~ soil2 + soil3 + ffreq2 + ffreq3 + dist
+meuse_sf <-st_as_sf(meuse, coords = c("x", "y"), crs = 28992)
+meuse_sp <-as_Spatial(meuse_sf)
+bwE      <-bw.gwr(formula, approach="CV", data=meuse_sp, kernel = "exponential")
+res      <-gwr.basic(formula,data=meuse_sp, bw=bwE, kernel = "exponential")
+res
+
+##### Statistical significance of the coefficients
+res$SDF@data[1:5,]
+pval       <-gwr.t.adjust(res)
+pval$SDF@data[1:5,]
+
+##### Plot estimated coefficients 
+beta       <-res$SDF@data[,1:6]
+names(beta)<-paste(names(beta),"_coef",sep="")
+meuse_sf   <-cbind(meuse_sf,beta)
+plot(meuse_sf[,"soil2_coef"],pch=20,axes=TRUE)
+
+##### Meuse grid data (predicted sites) 
+data(meuse.grid)
+meuse.grid$ffreq2	<- ifelse(meuse.grid$ffreq ==2, 1, 0)
+meuse.grid$ffreq3	<- ifelse(meuse.grid$ffreq ==3, 1, 0)
+meuse.grid$soil2 	<- ifelse(meuse.grid$soil  ==2, 1, 0)
+meuse.grid$soil3 	<- ifelse(meuse.grid$soil  ==3, 1, 0)
+meuse.grid_sf 	<-st_as_sf(meuse.grid, coords = c("x", "y"), crs = 28992)
+meuse.grid_sp 	<-as_Spatial(meuse.grid_sf)
+
+##### Spatial prediction
+pred  <- gwr.predict(formula,data=meuse_sp, bw=bwE, kernel = "exponential", predictdata=meuse.grid_sp)
+summary(pred$SDF)
+
+##### Plot predicted values and their variances
+meuse.grid_sf   <-cbind(meuse.grid_sf,pred$SDF)
+plot(meuse.grid_sf[,"prediction"],pch=20,axes=TRUE)
+plot(meuse.grid_sf[,"prediction_var"],pch=20,axes=TRUE)
+
+##### Plot estimated coefficients 
+plot(meuse.grid_sf[,"soil2_coef"],pch=20,axes=TRUE)
+
+
