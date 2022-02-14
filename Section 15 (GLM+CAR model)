@@ -1,0 +1,55 @@
+
+#install.packages( c("CARBayes","CARBayesdata", "RColorBrewer", "spdep", "sf") )
+library(CARBayes)
+library(CARBayesdata)
+library(RColorBrewer)
+library(spdep)
+library(sf)
+
+##### pollutionhealthdata in 2007
+data(pollutionhealthdata)
+dat2007<-pollutionhealthdata[pollutionhealthdata$year==2007,]
+
+##### Adjacency matrix
+data(GGHB.IG)
+W.nb   	<- poly2nb(GGHB.IG)
+W      	<- nb2mat(W.nb, style = "B")	
+
+##### Poisson CAR model (Leroux)
+formula	<- observed ~ offset(log(expected)) + jsa + price + pm10
+resLex<- S.CARleroux(formula=formula, data=dat2007, family="poisson", W=W, burnin=5000, n.sample=20000)
+resLex
+
+##### Poisson regression model
+resGLM<- S.glm(formula=formula, data=dat2007, family="poisson", burnin=5000, n.sample=20000)
+
+##### Posterior distribution of the coefficients
+hist(resLex$samples$beta[,4], xlim=c(0.0,0.07), ylim=c(0,120), 20, freq=FALSE, col=rgb(0,0,1,0.5))
+hist(resGLM$samples$beta[,4], xlim=c(0.0,0.07), ylim=c(0,120), 10, freq=FALSE, col=rgb(1,0,0,0.5), add=TRUE)
+
+########## disease mapping ####################
+
+dat2007$predGLM <-resGLM$fitted.values
+dat2007$predLex  <-resLex$fitted.values
+dat      <- merge(x=GGHB.IG, y=dat2007, by="IG", all.x=FALSE, duplicateGeoms = TRUE)
+
+##### Observed number of cases
+dat2     <-st_as_sf(dat)
+nc       <- 10
+breaks   <- seq(10, 200, len=nc+1)
+pal      <- rev(brewer.pal(nc, "RdYlBu"))
+plot(dat2[, “observed”]  ,pal=pal,breaks=breaks, axes=TRUE,lwd=0.1)
+
+##### Predicted number of cases
+plot(dat2[, "predGLM"]  ,pal=pal,breaks=breaks, axes=TRUE,lwd=0.1)
+plot(dat2[, "predLex"]  ,pal=pal,breaks=breaks, axes=TRUE,lwd=0.1)
+
+##### Uncertainty in the predicted values
+predGLM_samp <-as.matrix( resGLM$samples$fitted )
+boxplot( predGLM_samp[,1:10],ylim=c(10,125))
+
+predLex_samp <-as.matrix( resLex$samples$fitted )
+boxplot( predLex_samp[,1:10],ylim=c(10,125))
+
+
+
