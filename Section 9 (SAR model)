@@ -1,0 +1,65 @@
+
+# install.packages( c("spatialreg", "spdep", "car" ) )
+library(spatialreg)
+library(spdep)
+library(car)
+
+##### Read Boston housing dataset
+data(boston)
+boston.c[1:5,]
+boston.soi
+w<-nb2listw(boston.soi)
+
+##### Linear regression
+formula   <- log(CMEDV) ~ CRIM + I(RM^2) + log(LSTAT)
+lmod      <- lm(formula, data=boston.c)
+summary(lmod)
+vif(lmod)
+
+##### Test on residual spatial dependence
+lm.morantest(lmod, w)
+ 
+##### Lagrange multiplier tests
+tres   <- lm.LMtests(lmod, w, test=c("LMlag","LMerr"))
+summary(tres)
+
+##### Robust lagrange multiplier tests
+tres2   <- lm.LMtests(lmod, w, test=c("RLMlag","RLMerr"))
+summary(tres2)
+
+########## Spatial econometric models ##########
+##### Spatial lag model
+slm    <-spatialreg::lagsarlm(formula,data=boston.c, listw=w, tol.solve=1.0e-20)
+summary(slm)
+
+##### Spatial error model
+sem    <-spatialreg::errorsarlm(formula,data=boston.c, listw=w, tol.solve=1.0e-20)
+summary(sem)
+
+##### Spatial Durbin model
+sdm    <-spatialreg::lagsarlm(formula,data=boston.c, listw=w, tol.solve=1.0e-20,type="mixed")
+summary(sdm)
+
+##### Spatial Durbin error model
+sdem    <-spatialreg::errorsarlm(formula,data=boston.c, listw=w, tol.solve=1.0e-20,etype="emixed")
+summary(sdem)
+
+##### Spatial lag of X model
+slx     <-spatialreg::lmSLX(formula,data=boston.c, listw=w)
+
+##### SARAR model
+sarar   <-spatialreg::sacsarlm(formula,data=boston.c, listw=w, tol.solve=1.0e-20)
+
+########## Direct and indirect effects ##########
+##### Estimates
+spatialreg::impacts(slm,listw=w)
+spatialreg::impacts(sdem,listw=w)
+
+##### Statistical significance
+w2     <- as(w, "CsparseMatrix")
+trMat  <- spatialreg::trW(w2, type="mult")
+ires_sim<-spatialreg::impacts(sdem, tr=trMat, R=1000)
+summary(ires_sim)
+
+
+
