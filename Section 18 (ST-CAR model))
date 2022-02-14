@@ -1,0 +1,47 @@
+
+#install.packages( c("CARBayesST", "CARBayesdata", "RColorBrewer", "spdep", "sf"))
+library(CARBayesST)
+library(CARBayesdata)
+library(RColorBrewer)
+library(spdep)
+library(sf)
+
+##### pollutionhealthdata 
+data(pollutionhealthdata)
+data(GGHB.IG)
+W.nb   	<- poly2nb(GGHB.IG)
+W      	<- nb2mat(W.nb, style = "B")
+pollutionhealthdata[1:4,]
+
+##### Spatiotemporal CAR model
+formula	<- observed ~ offset(log(expected)) + jsa + price + pm10
+model   <- ST.CARar(formula = formula, family = "poisson", data = pollutionhealthdata, AR=1, W = W, burnin = 2000, n.sample = 50000)
+model
+
+##### Plot the predicted value in 2008 (disease mapping)
+pollutionhealthdata$predCAR<-model$fitted.values
+dat	    <- merge(x=GGHB.IG, y=pollutionhealthdata, by="IG", all.x=FALSE, duplicateGeoms = TRUE) 
+dat2    <- st_as_sf(dat)
+year    <- 2008
+dat2_sub<- dat2[dat2$year==year,]
+nc	    <- 11
+breaks  <- seq(10, 200, len=nc+1)
+pal     <- rev(brewer.pal(nc, "RdYlBu"))
+plot(dat2_sub[, c("observed", "predCAR")], pal=pal, breaks=breaks, axes=TRUE, lwd=0.1)
+
+##### Spatiotemporal CAR model with estimation of spatially dependent neighborhoods
+model2  <- ST.CARadaptive(formula = formula, family = "poisson",
+                   data = pollutionhealthdata, W = W, burnin = 5000, n.sample = 50000)
+model2
+
+##### Plot the estimated spatially dependent neighborhoods
+Wmedian <-model2$localised.structure$Wmedian
+Wmedian[is.na(Wmedian)]<-0
+Wmedian2<- ifelse(Wmedian>0, 0.8,0)
+West    <- mat2listw(Wmedian2)	
+coords  <-st_coordinates(st_centroid(dat2_sub))
+plot(st_geometry(dat2_sub), border="grey")
+plot(West, coords,add = TRUE, col="red",cex=0.01,lwd=1,xlim=xlim,ylim=ylim) 
+
+
+
