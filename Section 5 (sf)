@@ -1,0 +1,34 @@
+
+install.packages( c("sf", "NipponMap", "RColorBrewer ") )
+library( sf )
+library( NipponMap )
+library(RColorBrewer)
+
+#### Read prefecture polygons in Japan
+shp <- system.file("shapes/jpn.shp", package = "NipponMap")[1]
+pref<- read_sf(shp)
+pref
+
+#### Define CRS (Coordinate reference system)
+st_crs(pref)
+st_crs(pref) <- 4326
+st_crs(pref)
+
+#### Projection transformation
+pref_tr  <-st_transform(pref, crs=6677)
+st_coordinates(st_centroid(pref3))
+
+#### Maping
+pref2    <-pref[pref$name != "Okinawa",]
+plot( pref2[, "population"] )
+
+display.brewer.all()
+nc       <-7
+pal      <- brewer.pal(nc, "RdYlGn")
+plot(pref2[, "population"],pal=pal, axes=TRUE, nbreaks=nc)
+
+breaks   <-c(0, 1000000, 2000000, 3000000, 5000000, 8000000, max(pref2$population))
+nc       <-length(breaks)-1
+pal      <-rev( brewer.pal(nc, "RdYlGn") )
+plot(pref2[, "population"],pal=pal, axes=TRUE,xlim=c(130.5,145),ylim=c(31,46),
+breaks=breaks, key.pos = 1,key.length = 0.8)
