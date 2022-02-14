@@ -1,0 +1,54 @@
+
+# install.packages( c("mgcv", "spData", "mgcViz") )
+library(mgcv)
+library(spData)
+library(mgcViz)
+
+##### Lucas housing data
+data(house)
+coords<-coordinates(house)
+dat0  <-house@data
+dat   <-data.frame(coords,dat0)
+
+##### Temporal dependence only
+mod0 <-gam(log(price)~s(TLA)+garagesqft+s(wall,bs="re")+s(yrbuilt),data=dat)
+
+##### Spatial and Temporal dependence
+mod1 <-gam(log(price)~s(TLA)+garagesqft+s(wall,bs="re")+s(yrbuilt)+s(long,lat,bs="gp"), data=dat)
+
+##### Temporal and Cross (ST) dependence
+mod2 <-gam(log(price)~s(TLA)+garagesqft+s(wall,bs="re")+s(yrbuilt)+s(long,lat,yrbuilt,bs="gp"), data=dat)
+
+##### Spatial, temporal, and Cross (ST) dependence
+mod3 <-gam(log(price)~s(TLA)+garagesqft+s(wall,bs="re")+s(yrbuilt)+s(long,lat,bs="gp") + s(long,lat,yrbuilt, bs="gp"),data=dat)
+
+##### Model comparison
+BIC(mod0)
+BIC(mod1)
+BIC(mod2)
+BIC(mod3)
+
+
+##### Plot the estimated coefficients (mod2)
+summary(mod2)
+plot(mod2,select=3,ylim=c(-1,0.5))
+
+mod2_v<- getViz(mod2)
+pl 	  <- plotSlice(x = sm(mod2_v,4), fix = list("yrbuilt" = c(1850,1900,1950,2000)))
+pl
+
+##### Cross validation
+oid  	<- sample(nrow(dat),20000)	# 無作為抽出
+odat 	<- dat[oid,]			# 観測地点のデータ
+mdat	<- dat[oid,]			# 予測結果のデータ
+mod2 	<- gam(log(price)~s(TLA)+garagesqft+s(wall,bs="re")+s(yrbuilt)+s(long,lat,yrbuilt,bs="gp"), data=dat)
+pred 	<- predict(mod2,newdata=mdat)
+
+plot(log(odat$price), pred)
+abline(0, 1 ,col="red")
+
+##### Model with t-distribution for the residuals
+mod2 <-gam(log(price)~s(TLA)+garagesqft+s(wall,bs="re")+s(yrbuilt)+s(long,lat,yrbuilt,bs="gp"), data=dat, family=scat )
+
+
+
