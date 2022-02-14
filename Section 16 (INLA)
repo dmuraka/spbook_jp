@@ -1,0 +1,173 @@
+
+#install.packages("INLA",repos=c(getOption("repos"),INLA="https://inla.r-inla-download.org/R/stable"), dep=TRUE)
+### or install.packages("INLA",repos=c(getOption("repos"),INLA="https://inla.r-inla-download.org/R/testing"), dep=TRUE)
+
+library(INLA)
+names(inla.models()$likelihood)
+names(inla.models()$latent)
+inla.list.models()
+
+####################################################
+########### example 1: disease mapping #############
+####################################################
+
+#install.packages( c( "spdep", "CARBayesdata", "sf", "RColorBrewer" ) )
+library(spdep);library(CARBayesdata)
+
+##### pollutionhealth data
+data(pollutionhealthdata)
+dat2007 <- pollutionhealthdata[pollutionhealthdata$year==2007,]
+
+##### Adjacency matrix
+data(GGHB.IG)
+W.nb	  <- poly2nb(GGHB.IG)
+W     	<- nb2mat(W.nb, style = "B")
+
+#### Poisson regression
+formula	<- observed ~ offset(log(expected)) + jsa + price + pm10
+res     <- inla(formula=formula, data=dat2007, family="poisson", control.compute = list(dic = TRUE))
+summary(res)
+
+#### Poisson CAR model with group effects
+dat2007$ID <- as.integer(dat2007$IG)	# zone ID
+formula	   <- observed ~  pm10 + jsa + offset(log(expected)) + f(ID, model = "besag", graph= W) + f(year, model="iid")
+res   	   <- inla(formula=formula, data=dat2007, family="nbinomial", control.compute = list(dic = TRUE))
+summary(res)
+
+#### Estimated group effects
+res$summary.random[[1]][1:4,]
+res$summary.random[[2]]
+
+#### Predicted values
+pred       <-res$summary.fitted.values
+pred[1:4,]
+
+#### Plot the predicted values for disease mapping
+dat2007$pred<- pred$mean
+dat2007_sf  <- st_as_sf(dat2007)
+nc	        <- 11
+breaks      <- seq(10, 200, len=nc+1)
+pal         <- rev(brewer.pal(nc, "RdYlBu"))
+plot(dat2007_sf[, c("observed", "pred")]  ,pal=pal,breaks=breaks, axes=TRUE,lwd=0.1)
+
+####################################################
+########### example 2: spatial prediction ##########
+####################################################
+
+# install.packages( c("gstat", "sf") )
+library(gstat); library(sf); library(sp)
+
+##### Meuse data
+data(meuse)
+data(meuse.grid)
+
+y       <- meuse[,c("zinc")]
+x       <- meuse[,c("dist","ffreq")]
+coords  <- as.matrix( meuse[,c("x","y")] )
+
+x0      <- meuse.grid[,c("dist","ffreq")]
+coords0 <- as.matrix( meuse.grid[,c("x","y")] )
+
+##### Generate mesh
+mesh1 	<- inla.mesh.2d( loc=coords, max.edge = c(1000,1000))
+mesh2 	<- inla.mesh.2d( loc=coords, max.edge = c(300,1000))
+mesh3 	<- inla.mesh.2d( loc=coords, max.edge = c(300,300))
+mesh4 	<- inla.mesh.2d( loc=coords, max.edge = c(300,1000),cutoff=200)
+mesh5 	<- inla.mesh.2d( loc=coords, max.edge = c(300,1000),offset=c(-0.3,-0.1))
+mesh6 	<- inla.mesh.2d( loc=coords, max.edge = c(300,1000),offset=c(-0.1,-0.3))
+
+plot(mesh1, asp=1);points(coords, col="red",pch=20,cex=0.7)
+plot(mesh2, asp=1);points(coords, col="red",pch=20,cex=0.7)
+plot(mesh3, asp=1);points(coords, col="red",pch=20,cex=0.7)
+plot(mesh4, asp=1);points(coords, col="red",pch=20,cex=0.7)
+plot(mesh5, asp=1);points(coords, col="red",pch=20,cex=0.7)
+plot(mesh6, asp=1);points(coords, col="red",pch=20,cex=0.7)
+
+
+##########################################################
+##### Conventional geostatistical modeling ###############
+
+##### Pre-processing
+spde 	  <- inla.spde2.matern(mesh=mesh2, alpha=0.5)
+
+A	      <- inla.spde.make.A( mesh=mesh2, loc=coords )
+stk  	  <- inla.stack(data=list(y=y), A=list(1, A), tag="obs", 
+                      effects=list(data.frame(intercept=1, dist=x$dist, ffreq=x$ffreq), s=1:spde$n.spde))
+
+A0 	    <- inla.spde.make.A(mesh=mesh2, loc=coords0)
+stk0	  <- inla.stack(data=list(y=NA), A=list(1, A0), tag="mis",
+           effects=list( data.frame(intercept=1, dist=x0$dist, ffreq=x0$ffreq),s=1:spde$n.spde))
+
+stk.full<- inla.stack(stk, stk0)
+stk.data<- inla.stack.data(stk.full)
+stk.A	  <- inla.stack.A(stk.full)
+
+##### Geostatistical modeling and prediction
+mod 	  <- inla( log(y) ~ 0 + intercept + dist + ffreq + f(s, model=spde),  data=stk.data,
+                 control.predictor=list( A=stk.A ), family="gaussian")
+
+mis.ind	<- inla.stack.index(stk.full, tag="mis")$data
+pred	  <- mod$summary.fitted.values[mis.ind, "mean"]
+pred_sd	<- mod$summary.fitted.values[mis.ind, "sd"]
+
+##### Plot the predicted values
+meuse.grid_sf        <- st_as_sf(meuse.grid, coords = c("x", "y"), crs = 28992)
+meuse.grid_sf$pred   <-pred
+meuse.grid_sf$pred_sd<-pred_sd
+plot(meuse.grid_sf[, "pred"], axes=TRUE, pch=15)
+plot(meuse.grid_sf[, "pred_sd"], axes=TRUE, pch=15)
+
+########################################################################
+##### Geostatistical modeling considering physical barrier #############
+
+##### [a] Constrained by the Meuse river
+data(meuse.riv)
+xlim	   <- c(min(meuse.grid[,1])-100, max(meuse.grid[,1])+100)
+ylim	   <- c(min(meuse.grid[,2])-100, max(meuse.grid[,2])+100)
+meuse.riv<- meuse.riv[meuse.riv[,1]>xlim[1] & meuse.riv[,1]<xlim[2] & meuse.riv[,2]>ylim[1] & meuse.riv[,2]<ylim[2],]
+meuse.lst<- list(Polygons(list(Polygon(meuse.riv)),"meuse.riv"))
+meuse.sr <- SpatialPolygons(meuse.lst)
+segment	 <- inla.sp2segment(meuse.sr)
+mesh_b1	 <- inla.mesh.2d( loc=coords, max.edge = 300, interior =segment)
+
+##### [b] Constrained by the study area
+library(rgeos)
+coordinates(meuse.grid) = c("x", "y")
+gridded(meuse.grid) <- TRUE
+meuse.area <- gUnaryUnion(as(meuse.grid, "SpatialPolygons"))
+mesh_b2  <- inla.mesh.2d( loc=coords, max.edge = 300, boundary =meuse.area)
+
+##### Spatial prediction under [a] or [b] ##########
+
+##### Pre-processing
+mesh2    <-mesh_b1 ## or mesh_b2
+plot(mesh2, asp=1);points(coords, col="red",pch=20,cex=0.7)
+spde<- inla.spde2.matern(mesh=mesh2, alpha=1.5)
+
+A 	 <- inla.spde.make.A( mesh=mesh2, loc=coords)
+stk  <- inla.stack(data=list(y=y), A=list(1, A), tag="obs",
+                   effects=list(data.frame(intercept=1,dist=x$dist, ffreq=x$ffreq), s=1:spde$n.spde))
+
+A0 	 <- inla.spde.make.A(mesh=mesh2, loc=coords0)
+stk0 <- inla.stack(data=list(y=NA), A=list(1, A0), tag="mis",
+                   effects=list( data.frame(intercept=1,dist=x0$dist, ffreq=x0$ffreq),  s=1:spde$n.spde))
+
+stk.full <- inla.stack(stk, stk0)
+stk.data <- inla.stack.data(stk.full)
+stk.A    <- inla.stack.A(stk.full)
+
+##### Geostatistical modeling and prediction
+mod     <- inla( log(y) ~ 0 + intercept + dist + ffreq + f(s, model=spde),  data=stk.data,
+                 control.predictor=list( A=stk.A),family="gaussian")
+
+mis.ind<- inla.stack.index(stk.full, tag="mis")$data
+pred	 <- mod$summary.fitted.values[mis.ind, "mean"]
+pred_sd<- mod$summary.fitted.values[mis.ind, "sd"]
+meuse.grid_sf$pred2   <-pred
+meuse.grid_sf$pred2_sd<-pred_sd
+
+##### Plot the predicted values
+plot(meuse.grid_sf[, c("pred2")])
+plot(meuse.grid_sf[, c("pred2_sd")], axes=TRUE, pch=15)
+
+
