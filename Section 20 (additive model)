@@ -1,0 +1,22 @@
+
+install.packages( c("mgcv", "spData") )
+library(mgcv)
+library(spData)
+
+#### Lucas housing price data
+data(house)
+dat<-as.data.frame(house)
+dat[1:4,]
+
+##### Additive model
+formula    <- log(price) ~ s(TLA) + s(yrbuilt) + garagesqft + s(wall, bs="re")
+mod  	     <- gam(formula, data = dat)
+summary(mod)
+plot(mod,select=1)
+plot(mod,select=2)
+
+coefs       <-coefficients(mod)	
+wall_id     <-grep("wall",names(coefs))
+coefs_wall  <-coefs[wall_id]
+coefs_wall2 <-data.frame(wall=levels(dat$wall),coefs=coefs_wall)
+coefs_wall2
