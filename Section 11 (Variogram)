@@ -1,0 +1,39 @@
+
+# install.packages( c("gstat", "sf" ) )
+library(gstat, dep=TRUE)
+library(sf, dep=TRUE)
+
+##### Meuse data
+data(meuse)
+meuse[1:5,]
+meuse_sf <-st_as_sf(meuse, coords = c("x", "y"), crs = 28992)
+plot(meuse_sf[,"zinc"], pch=20, axes=TRUE)
+
+##### variogram cloud
+formula  <-log(zinc) ~ soil + ffreq + dist
+cvario   <-variogram(formula,data=meuse_sf,cloud=TRUE)
+plot(cvario)
+
+##### empirical variogram
+vario   <-variogram(formula,data=meuse_sf)
+plot(vario)
+
+vario   <-variogram(formula,data=meuse_sf,cut=1300, width=50)
+plot(vario)
+
+##### variogram model
+varioSph<-fit.variogram(vario, vgm(psill=0.015, "Sph", range=700, nugget=0.05))
+varioExp<-fit.variogram(vario, vgm(psill=0.015, "Exp", range=700, nugget=0.05))
+varioGau<-fit.variogram(vario, vgm(psill=0.015, "Gau", range=700, nugget=0.05))
+
+plot(vario,varioSph)
+plot(vario,varioExp)
+plot(vario,varioGau)
+
+varioSph
+varioExp
+varioGau
+
+attr(varioSph, "SSErr")
+attr(varioExp, "SSErr")
+attr(varioGau, "SSErr")
