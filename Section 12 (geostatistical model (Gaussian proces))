@@ -1,0 +1,45 @@
+
+# install.packages( c("gstat", "sf") )
+library(gstat)
+library(sf)
+
+##### Meuse data
+data(meuse)
+meuse_sf <-st_as_sf(meuse, coords = c("x", "y"), crs = 28992)
+formula  <-log(zinc) ~ soil + ffreq + dist
+
+##### Fit variogram
+vario    <-variogram(formula,data=meuse_sf)
+varioExp<-fit.variogram(vario, vgm(psill=0.015, "Exp", range=700, nugget=0.05))
+
+##### Meuse grid data (interpolated sites)
+data(meuse.grid)
+meuse.grid[1:5,]
+meuse_sf <- st_as_sf(meuse.grid, coords = c("x", "y"), crs = 28992)
+
+##### Fit geostatistical model
+gmod     <- gstat(formula=formula, data=meuse_sf, model=varioExp)
+
+##### Spatial prediction
+pred     <- predict(gmod, newdata = meuse.grid_sf)
+pred[1:5,]
+plot(pred[, "var1.pred"], axes=TRUE, pch=15,cex=0.5)
+***to be fixed***
+
+##### Fit geostatistical model without explanatory variables
+gmod0    <- gstat(formula=log(zinc) ~ 1, data=meuse_sf, model=varioExp)
+pred0    <- predict(gmod0, newdata = meuse.grid_sf)
+plot(pred0[, "var1.pred"], axes=TRUE, pch=15,cex=0.5)
+
+##### Cross-validation
+cvres    <- gstat.cv(gmod)
+summary(cvres)
+mse      <- mean(cvres$residual^2)
+mse
+
+xylim    <-range(cvres$observed)
+true     <-cvres$observed
+pred_cv  <-cvres$var1.pred
+plot(true, pred_cv, xlim=xylim, ylim=xylim)
+abline(0,1)
+
