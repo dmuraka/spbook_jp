@@ -1,0 +1,53 @@
+
+install.packages(c( "sf", "NipponMap", "spdep" ) )
+library( sf ); library( NipponMap ); library( spdep)
+
+##### Read prefecture polygons in Japan
+shp   	<- system.file("shapes/jpn.shp", package = "NipponMap")[1]
+pref0 	<- read_sf(shp) 
+pref0b	<- pref0[pref0$name != "Okinawa",]
+st_crs(pref0b) <- 4326	#Specify the EPSG code of WGS84
+
+pref<-st_transform(pref0b,crs=6677)# Specify the EPSG code (Plane Rectangular Coordinates system 9)
+
+##### Neighbors (Queen)
+nb1     <- poly2nb(pref2)
+nb1
+
+coords<- st_coordinates(st_centroid(pref))
+plot(st_geometry(pref), col="white", border="grey")
+plot(nb1, coords, add=TRUE, col="red",cex=0.01,lwd=1.5)
+
+##### Neighbors (4-nearet neighbors)
+knn   <- knearneigh(coords,4)
+nb2   <- knn2nb(knn)
+plot(st_geometry(pref), border="grey")
+plot(nb2, coords, add = TRUE, col="red",cex=0.01,lwd=1.5)
+
+##### Neighbors (8-nearet neighbors)
+nb3<-knn2nb(knearneigh(coords,8))
+plot(st_geometry(pref), border="grey")
+plot(nb3, coords,add = TRUE, col="red",cex=0.01,lwd=1.5)
+
+##### Neighbors (distance-based; equal or less than 150 km)
+nb4<-dnearneigh(coords,d1=0, d2= 150000)
+plot(st_geometry(pref), border="grey")
+plot(nb4, coords,add = TRUE, col="red",cex=0.01,lwd=1.5)
+
+##### Ajacency matrix (nb3)
+w3    <-nb2listw(nb3)
+w3mat <-listw2mat(w3) 
+w3mat[1:5,1:5]
+
+##### Neighbors (distance-decaying function)
+nb5   	<- dnearneigh(coords,d1=0, d2= 500000)
+glist 	<- nbdists(nb5, coords)
+glist 	<- lapply(glist, function(x) 1/x)
+w5    	<- nb2listw(nb5, glist = glist)
+
+##### Ajacency matrix (nb5)
+w5mat 	<- listw2mat(w5)
+w5mat[1:5,1:5]
+
+
+
