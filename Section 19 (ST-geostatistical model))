@@ -1,0 +1,49 @@
+
+install.packages( c("gstat","spacetime","sp") )
+library(gstat)
+library(spacetime)
+library(sp)
+
+##### air data
+data(air)
+dates[1:10]
+stations[1:5]
+air[1:5,1001:1005]
+
+##### processing for observed data
+dat <- STFDF(stations, dates, data.frame(PM10 = as.vector(air)))
+dat <- dat[,"2008-04-01/2008-05-31"]
+dat <- as(dat,"STSDF")
+proj4string(dat)
+
+##### processing for missing data
+spat_grid0<- expand.grid(lon = seq(6,15, 0.5), lat = seq(47, 55, 0.5))
+spat_grid <- SpatialPoints(spat_grid0)
+gridded(spat_grid) <- TRUE
+
+temp_grid <- as.Date("2008-04-01") + seq(0,60,length=6)
+temp_grid
+
+grid      <- STF(sp = spat_grid, time = temp_grid)
+proj4string(grid)<-CRS("+proj=longlat +datum=WGS84")
+
+##### spatiotemporal variogram
+vv        <- variogram(PM10~1, data=dat, tlags=0:5)
+plot(vv)
+plot(vv, map = FALSE)
+
+separableModel<- vgmST("separable", space=vgm(0.9,"Exp", 200, 0.1), time =vgm(0.9,"Exp", 5  , 0.1), sill=40)
+separableVgm 	<- fit.StVariogram(vv, separableModel)
+
+attr(separableVgm, "optim")$value
+prodSumModel 	<- vgmST("productSum", space=vgm(40 ,"Exp", 200, 5), time =vgm(40,"Exp", 5  , 5), k=0.1)
+
+##### spatiotemporal prediction
+pred  <- krigeST(PM10~1, data = dat, newdata = grid, separableModel, computeVar = TRUE)
+stplot(pred)
+
+pred$se <- sqrt(pred$var1.var)
+stplot(pred[,,"se"])
+
+
+
