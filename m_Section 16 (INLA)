@@ -1,5 +1,5 @@
 
-#install.packages("INLA",repos=c(getOption("repos"),INLA="https://inla.r-inla-download.org/R/stable"), dep=TRUE)
+install.packages("INLA",repos=c(getOption("repos"),INLA="https://inla.r-inla-download.org/R/stable"), dep=TRUE)
 ### or install.packages("INLA",repos=c(getOption("repos"),INLA="https://inla.r-inla-download.org/R/testing"), dep=TRUE)
 
 library(INLA)
@@ -16,7 +16,6 @@ library(spdep);library(CARBayesdata)
 
 ##### pollutionhealth data
 data(pollutionhealthdata)
-dat2007 <- pollutionhealthdata[pollutionhealthdata$year==2007,]
 
 ##### Adjacency matrix
 data(GGHB.IG)
@@ -25,13 +24,16 @@ W     	<- nb2mat(W.nb, style = "B")
 
 #### Poisson regression
 formula	<- observed ~ offset(log(expected)) + jsa + price + pm10
-res     <- inla(formula=formula, data=dat2007, family="poisson", control.compute = list(dic = TRUE))
+res     <- inla(formula=formula, data=pollutionhealthdata, family="poisson", 
+                control.compute = list(dic = TRUE))
 summary(res)
 
 #### Poisson CAR model with group effects
-dat2007$ID <- as.integer(dat2007$IG)	# zone ID
-formula	   <- observed ~  pm10 + jsa + offset(log(expected)) + f(ID, model = "besag", graph= W) + f(year, model="iid")
-res   	   <- inla(formula=formula, data=dat2007, family="nbinomial", control.compute = list(dic = TRUE))
+pollutionhealthdata$ID <- as.integer(pollutionhealthdata$IG)	# zone ID
+formula	   <- observed ~  pm10 + jsa + offset(log(expected)) + 
+              f(ID, model = "besag", graph= W) + f(year, model="iid")
+res   	   <- inla(formula=formula, data=pollutionhealthdata, family="nbinomial", 
+                  control.compute = list(dic = TRUE))
 summary(res)
 
 #### Estimated group effects
@@ -42,20 +44,26 @@ res$summary.random[[2]]
 pred       <-res$summary.fitted.values
 pred[1:4,]
 
-#### Plot the predicted values for disease mapping
-dat2007$pred<- pred$mean
-dat2007_sf  <- st_as_sf(dat2007)
-nc	        <- 11
-breaks      <- seq(10, 200, len=nc+1)
-pal         <- rev(brewer.pal(nc, "RdYlBu"))
-plot(dat2007_sf[, c("observed", "pred")]  ,pal=pal,breaks=breaks, axes=TRUE,lwd=0.1)
+#### Plot the predicted value (posterior mean)
+year     <- 2011
+dat2011  <- pollutionhealthdata[pollutionhealthdata$year==year,]
+dat2011$pred<- pred$mean[pollutionhealthdata$year==year]
+
+data(GGHB.IG)
+dat      <- merge(x=GGHB.IG, y=dat2011, by="IG", all.x=FALSE, duplicateGeoms = TRUE)
+dat2     <- st_as_sf(dat)
+nc       <- 11
+breaks   <- seq(10, 200, len=nc+1)
+pal      <- rev(brewer.pal(nc, "RdYlBu"))
+plot(dat2[, c("observed", "pred")], pal=pal, breaks=breaks, axes=TRUE, lwd=0.1)
+
 
 ####################################################
 ########### example 2: spatial prediction ##########
 ####################################################
 
 # install.packages( c("gstat", "sf") )
-library(gstat); library(sf); library(sp)
+library(sf); library(sp)#library(gstat); 
 
 ##### Meuse data
 data(meuse)
@@ -96,7 +104,7 @@ stk  	  <- inla.stack(data=list(y=y), A=list(1, A), tag="obs",
 
 A0 	    <- inla.spde.make.A(mesh=mesh2, loc=coords0)
 stk0	  <- inla.stack(data=list(y=NA), A=list(1, A0), tag="mis",
-           effects=list( data.frame(intercept=1, dist=x0$dist, ffreq=x0$ffreq),s=1:spde$n.spde))
+                     effects=list( data.frame(intercept=1, dist=x0$dist, ffreq=x0$ffreq),s=1:spde$n.spde))
 
 stk.full<- inla.stack(stk, stk0)
 stk.data<- inla.stack.data(stk.full)
@@ -104,7 +112,7 @@ stk.A	  <- inla.stack.A(stk.full)
 
 ##### Geostatistical modeling and prediction
 mod 	  <- inla( log(y) ~ 0 + intercept + dist + ffreq + f(s, model=spde),  data=stk.data,
-                 control.predictor=list( A=stk.A ), family="gaussian")
+                control.predictor=list( A=stk.A ), family="gaussian")
 
 mis.ind	<- inla.stack.index(stk.full, tag="mis")$data
 pred	  <- mod$summary.fitted.values[mis.ind, "mean"]
@@ -127,6 +135,7 @@ ylim	   <- c(min(meuse.grid[,2])-100, max(meuse.grid[,2])+100)
 meuse.riv<- meuse.riv[meuse.riv[,1]>xlim[1] & meuse.riv[,1]<xlim[2] & meuse.riv[,2]>ylim[1] & meuse.riv[,2]<ylim[2],]
 meuse.lst<- list(Polygons(list(Polygon(meuse.riv)),"meuse.riv"))
 meuse.sr <- SpatialPolygons(meuse.lst)
+
 segment	 <- inla.sp2segment(meuse.sr)
 mesh_b1	 <- inla.mesh.2d( loc=coords, max.edge = 300, interior =segment)
 
@@ -167,7 +176,7 @@ meuse.grid_sf$pred2   <-pred
 meuse.grid_sf$pred2_sd<-pred_sd
 
 ##### Plot the predicted values
-plot(meuse.grid_sf[, c("pred2")])
-plot(meuse.grid_sf[, c("pred2_sd")], axes=TRUE, pch=15)
+plot(meuse.grid_sf[, "pred2"], axes=TRUE, pch=15)
+plot(meuse.grid_sf[, "pred2_sd"], axes=TRUE, pch=15)
 
 
