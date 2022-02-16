@@ -1,8 +1,7 @@
-
 # install.packages( c("gstat", "sf") )
 library(gstat)
 library(sf)
-
+library(sp)
 ##### Meuse data
 data(meuse)
 meuse_sf <-st_as_sf(meuse, coords = c("x", "y"), crs = 28992)
@@ -15,7 +14,7 @@ varioExp<-fit.variogram(vario, vgm(psill=0.015, "Exp", range=700, nugget=0.05))
 ##### Meuse grid data (interpolated sites)
 data(meuse.grid)
 meuse.grid[1:5,]
-meuse_sf <- st_as_sf(meuse.grid, coords = c("x", "y"), crs = 28992)
+meuse.grid_sf <- st_as_sf(meuse.grid, coords = c("x", "y"), crs = 28992)
 
 ##### Fit geostatistical model
 gmod     <- gstat(formula=formula, data=meuse_sf, model=varioExp)
@@ -24,7 +23,7 @@ gmod     <- gstat(formula=formula, data=meuse_sf, model=varioExp)
 pred     <- predict(gmod, newdata = meuse.grid_sf)
 pred[1:5,]
 plot(pred[, "var1.pred"], axes=TRUE, pch=15,cex=0.5)
-***to be fixed***
+plot(pred[, "var1.var"], axes=TRUE, pch=15,cex=0.5)
 
 ##### Fit geostatistical model without explanatory variables
 gmod0    <- gstat(formula=log(zinc) ~ 1, data=meuse_sf, model=varioExp)
@@ -42,4 +41,3 @@ true     <-cvres$observed
 pred_cv  <-cvres$var1.pred
 plot(true, pred_cv, xlim=xylim, ylim=xylim)
 abline(0,1)
-
