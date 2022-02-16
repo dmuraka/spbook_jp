@@ -1,6 +1,6 @@
-
-# install.packages( c("mgcv", "spData", "mgcViz") )
+# install.packages( c("mgcv", "sp", "spData", "mgcViz") )
 library(mgcv)
+library(sp)
 library(spData)
 library(mgcViz)
 
