@@ -1,7 +1,6 @@
-
-# install.packages( c("GWmodel", "gstat" ) )
-library(GWmodel, dep=TRUE)
-library(gstat, dep=TRUE)
+# install.packages( c("GWmodel", "sp" ) )
+library(GWmodel)
+library(sp)
 
 ##### Meuse data
 data(meuse)
@@ -50,5 +49,4 @@ plot(meuse.grid_sf[,"prediction_var"],pch=20,axes=TRUE)
 
 ##### Plot estimated coefficients 
 plot(meuse.grid_sf[,"soil2_coef"],pch=20,axes=TRUE)
-
 
