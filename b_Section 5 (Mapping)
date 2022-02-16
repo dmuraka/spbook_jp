@@ -1,8 +1,8 @@
 
-install.packages( c("sf", "NipponMap", "RColorBrewer ") )
+install.packages( c("sf", "NipponMap", "RColorBrewer") )
 library( sf )
 library( NipponMap )
-library(RColorBrewer)
+library( RColorBrewer )
 
 #### Read prefecture polygons in Japan
 shp <- system.file("shapes/jpn.shp", package = "NipponMap")[1]
@@ -16,7 +16,7 @@ st_crs(pref)
 
 #### Projection transformation
 pref_tr  <-st_transform(pref, crs=6677)
-st_coordinates(st_centroid(pref3))
+st_coordinates(st_centroid(pref_tr))
 
 #### Maping
 pref2    <-pref[pref$name != "Okinawa",]
