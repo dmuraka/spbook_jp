@@ -11,7 +11,7 @@ st_crs(pref0b) <- 4326	#Specify the EPSG code of WGS84
 pref<-st_transform(pref0b,crs=6677)# Specify the EPSG code (Plane Rectangular Coordinates system 9)
 
 ##### Neighbors (Queen)
-nb1     <- poly2nb(pref2)
+nb1     <- poly2nb(pref)
 nb1
 
 coords<- st_coordinates(st_centroid(pref))
