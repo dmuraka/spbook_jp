@@ -28,17 +28,16 @@ hist(resLex$samples$beta[,4], xlim=c(0.0,0.07), ylim=c(0,120), 20, freq=FALSE, c
 hist(resGLM$samples$beta[,4], xlim=c(0.0,0.07), ylim=c(0,120), 10, freq=FALSE, col=rgb(1,0,0,0.5), add=TRUE)
 
 ########## disease mapping ####################
-
-dat2007$predGLM <-resGLM$fitted.values
+dat2007$predGLM  <-resGLM$fitted.values
 dat2007$predLex  <-resLex$fitted.values
 dat      <- merge(x=GGHB.IG, y=dat2007, by="IG", all.x=FALSE, duplicateGeoms = TRUE)
 
 ##### Observed number of cases
-dat2     <-st_as_sf(dat)
+dat2     <- st_as_sf(dat)
 nc       <- 10
 breaks   <- seq(10, 200, len=nc+1)
 pal      <- rev(brewer.pal(nc, "RdYlBu"))
-plot(dat2[, “observed”]  ,pal=pal,breaks=breaks, axes=TRUE,lwd=0.1)
+plot(dat2[, "observed"]  ,pal=pal,breaks=breaks, axes=TRUE,lwd=0.1)
 
 ##### Predicted number of cases
 plot(dat2[, "predGLM"]  ,pal=pal,breaks=breaks, axes=TRUE,lwd=0.1)
@@ -50,6 +49,4 @@ boxplot( predGLM_samp[,1:10],ylim=c(10,125))
 
 predLex_samp <-as.matrix( resLex$samples$fitted )
 boxplot( predLex_samp[,1:10],ylim=c(10,125))
-
-
 
