@@ -1,6 +1,6 @@
 
-# install.packages(c("CARBayesdata"))
-library("CARBayesdata")
+# install.packages( "CARBayesdata" )
+library( CARBayesdata )
 
 ##### pollutionhealthdata data
 data("pollutionhealthdata")
@@ -10,7 +10,7 @@ head(pollutionhealthdata)
 formula	<- observed ~ offset(log(expected)) + jsa + price + pm10
 model   <- glm( formula = formula, family = poisson, data = pollutionhealthdata )
 summary(model)
- 
+
 ##### Negative binomial regression
 library(MASS)
 model2  <- glm.nb(formula = formula, data = pollutionhealthdata)
