@@ -1,4 +1,4 @@
-# install.packages(c("rgdal", "spdep", "RColorBrewer"))
+# install.packages(c("rgdal", "spdep", "RColorBrewer")) 
 library(rgdal)
 library(spdep)
 library(RColorBrewer)
