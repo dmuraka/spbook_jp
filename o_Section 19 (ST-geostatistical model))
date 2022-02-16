@@ -1,5 +1,5 @@
 
-install.packages( c("gstat","spacetime","sp") )
+# install.packages( c("gstat","spacetime","sp") )
 library(gstat)
 library(spacetime)
 library(sp)
@@ -32,18 +32,19 @@ vv        <- variogram(PM10~1, data=dat, tlags=0:5)
 plot(vv)
 plot(vv, map = FALSE)
 
-separableModel<- vgmST("separable", space=vgm(0.9,"Exp", 200, 0.1), time =vgm(0.9,"Exp", 5  , 0.1), sill=40)
+separableModel<- vgmST("separable", space=vgm(0.9,"Exp", 200, 0.1), 
+                       time =vgm(0.9,"Exp", 5  , 0.1), sill=40)
 separableVgm 	<- fit.StVariogram(vv, separableModel)
 
 attr(separableVgm, "optim")$value
-prodSumModel 	<- vgmST("productSum", space=vgm(40 ,"Exp", 200, 5), time =vgm(40,"Exp", 5  , 5), k=0.1)
+prodSumModel 	<- vgmST("productSum", space=vgm(40 ,"Exp", 200, 5), 
+                       time =vgm(40,"Exp", 5  , 5), k=0.1)
 
 ##### spatiotemporal prediction
-pred  <- krigeST(PM10~1, data = dat, newdata = grid, separableModel, computeVar = TRUE)
+pred  <- krigeST(PM10~1, data = dat, newdata = grid, 
+                 separableModel, computeVar = TRUE)
 stplot(pred)
 
 pred$se <- sqrt(pred$var1.var)
 stplot(pred[,,"se"])
-
-
 
