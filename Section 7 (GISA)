@@ -1,4 +1,3 @@
-
 # install.packages(c("rgdal", "spdep", "RColorBrewer"))
 library(rgdal)
 library(spdep)
@@ -14,6 +13,7 @@ pref 	<- st_transform(pref0b,crs=6677)
 ###### Adjacency matrix
 coords	<- st_coordinates(st_centroid(pref))
 knn   	<- knearneigh(coords,4)
+nb2     <- knn2nb(knn)
 w     	<- nb2listw(nb2)
 
 ###### Population data
@@ -28,8 +28,8 @@ geary	<- geary.test(pop, listw=w)
 geary
 
 ###### (Global) Getis G statistic
-w_b	<- nb2listw( nb, style="B" )
-G	<- globalG.test( y, listw = w_b )
+w_b	<- nb2listw( nb2, style="B" )
+G	<- globalG.test( pop, listw = w_b )
 G
 
 ###### (Global) Getis G* statistic
