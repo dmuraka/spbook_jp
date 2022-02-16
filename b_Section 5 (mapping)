@@ -1,5 +1,5 @@
 
-install.packages( c("sf", "NipponMap", "RColorBrewer") )
+install.packages( c("sf", "NipponMap", "RColorBrewer") ) 
 library( sf )
 library( NipponMap )
 library( RColorBrewer )
