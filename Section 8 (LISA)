@@ -11,6 +11,7 @@ st_crs(pref0b) <- 4326
 pref 	  <- st_transform(pref0b,crs=6677)
 coords	<- st_coordinates(st_centroid(pref))
 knn   	<- knearneigh(coords,4)
+nb2    	<- knn2nb(knn)
 w     	<- nb2listw(nb2)
 pop   	<- pref$population
 
@@ -26,7 +27,7 @@ pal 	<- rev( brewer.pal(n = nc, name = "RdYlBu" ))
 plot(pref[,"lmoran"], pal = pal, breaks=breaks)
 
 ##### Plot the statistical significance 
-pref$lmoran_p<- lmoran[, "Pr(z > 0)"]
+pref$lmoran_p<- lmoran[,"Pr(z != E(Ii))"]#[,"Pr(z > E(Ii))"]#[, "Pr(z > 0)"]
 breaks	<-c( 0, 0.01, 0.05, 0.10, 1 )
 nc   	<- length(breaks)-1
 pal 	<- rev( brewer.pal(n = nc, name = "YlOrRd" ))
