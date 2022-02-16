@@ -1,14 +1,14 @@
 
 # install.packages( c( "spdep", "spmoran") )
-
 library(spdep)
 library(spmoran)
 
 ##### Lucas housing data
 data(house)
-y      <- house@data[,”price”]
-x      <- house@data[,c("TLA","garagesqft","age","rooms","beds")]
-coords<- coordinates(house)
+dat    <- as.data.frame(house)
+y      <- dat[,"price"]
+x      <- dat[,c("TLA","garagesqft","age","rooms","beds")]
+coords <- dat[,c("long", "lat")]
 
 ##### Spatially varying coefficient (SVC) modeling
 meig   <- meigen_f(coords)
@@ -18,8 +18,10 @@ plot_s(res1,0)
 plot_s(res1, 3, pmax=0.01)
 
 ##### SVC modeling with constant and group effects
-res2   <- resf_vc( y = log(y), x = x[,c("TLA","age")], xconst = x[,c("garagesqft","rooms","beds")],
-                   xgroup = dat[,c("wall","syear")], meig=meig)
+xgroup <- dat[,c("wall","syear")]
+res2   <- resf_vc( y = log(y), x = x[,c("TLA","age")], 
+                   xconst = x[,c("garagesqft","rooms","beds")],
+                   xgroup = xgroup, meig=meig)
 res2
 res2$b_g
 
@@ -29,6 +31,7 @@ ng_b   <- nongauss_y( tr_num = 1 )
 ng_c   <- nongauss_y( y_nonneg=TRUE, tr_num = 1 )
 res3   <- resf_vc(y=y, x=x[,c("TLA","age")], xconst=x[,c("garagesqft","rooms","beds")],
                   meig=meig, nongauss = ng_c)
+res3
 plot(res3$pdf, type="l")
 res3$pred_quantile[1:4,]
 
