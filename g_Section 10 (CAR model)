@@ -1,13 +1,12 @@
-
 # install.packages( c("spData", "CARBayes", "sf", "RColorBrewer") )
-library(spData)
+library(spdep)
 library(CARBayes)
 library(sf)
 library(RColorBrewer)
 
 boston.tr <-st_read(system.file("shapes/boston_tracts.shp", package="spData"))
 w_nb      <-poly2nb( boston.tr )
-w         <-nb2mat(w_nb,style="B")
+W         <-nb2mat(w_nb,style="B")
 
 formula   <- log(CMEDV) ~ CRIM + I(RM^2) + log(LSTAT)
 resLm	    <- S.glm(formula, data=boston.tr, family="gaussian", burnin=5000, n.sample=20000)
@@ -21,7 +20,7 @@ resCAR
 
 
 boston.tr$predLm <- exp( resLm$fitted.values )
-boston.tr$predLex<- exp( resLeX$fitted.values)
+boston.tr$predLex<- exp( resLex$fitted.values)
 boston.tr$predCAR<- exp( resCAR$fitted.values)
 
 nc        <- 10
@@ -39,4 +38,3 @@ predLex_95CI<-apply(predLex_samp,2,function(x) quantile(x, probs=c(0.025, 0.975)
 
 predLm_95CI[,1:8]
 predLex_95CI[,1:8]
-
