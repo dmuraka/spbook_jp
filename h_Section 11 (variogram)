@@ -1,7 +1,7 @@
-
-# install.packages( c("gstat", "sf" ) )
-library(gstat, dep=TRUE)
-library(sf, dep=TRUE)
+# install.packages( c("gstat", "sf", "spData" ) )
+library(gstat)
+library(sf)
+library(spData)
 
 ##### Meuse data
 data(meuse)
