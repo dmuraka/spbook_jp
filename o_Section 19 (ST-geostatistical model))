@@ -42,7 +42,7 @@ prodSumModel 	<- vgmST("productSum", space=vgm(40 ,"Exp", 200, 5),
 
 ##### spatiotemporal prediction
 pred  <- krigeST(PM10~1, data = dat, newdata = grid, 
-                 separableModel, computeVar = TRUE)
+                 separableVgm, computeVar = TRUE)
 stplot(pred)
 
 pred$se <- sqrt(pred$var1.var)
