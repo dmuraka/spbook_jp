@@ -18,8 +18,8 @@ library(spdep);library(CARBayesdata)
 data(pollutionhealthdata)
 
 ##### Adjacency matrix
-data(GGHB.IG)
-W.nb	  <- poly2nb(GGHB.IG)
+data(GGHB.IZ)
+W.nb	  <- poly2nb(GGHB.IZ)
 W     	<- nb2mat(W.nb, style = "B")
 
 #### Poisson regression
@@ -29,7 +29,7 @@ res     <- inla(formula=formula, data=pollutionhealthdata, family="poisson",
 summary(res)
 
 #### Poisson CAR model with group effects
-pollutionhealthdata$ID <- as.integer(pollutionhealthdata$IG)	# zone ID
+pollutionhealthdata$ID <- as.integer(pollutionhealthdata$IZ)	# zone ID
 formula	   <- observed ~  pm10 + jsa + offset(log(expected)) + 
               f(ID, model = "besag", graph= W) + f(year, model="iid")
 res   	   <- inla(formula=formula, data=pollutionhealthdata, family="nbinomial", 
@@ -49,8 +49,8 @@ year     <- 2011
 dat2011  <- pollutionhealthdata[pollutionhealthdata$year==year,]
 dat2011$pred<- pred$mean[pollutionhealthdata$year==year]
 
-data(GGHB.IG)
-dat      <- merge(x=GGHB.IG, y=dat2011, by="IG", all.x=FALSE, duplicateGeoms = TRUE)
+data(GGHB.IZ)
+dat      <- merge(x=GGHB.IZ, y=dat2011, by="IZ", all.x=FALSE, duplicateGeoms = TRUE)
 dat2     <- st_as_sf(dat)
 nc       <- 11
 breaks   <- seq(10, 200, len=nc+1)
