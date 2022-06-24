@@ -7,8 +7,8 @@ library(sf)
 
 ##### pollutionhealthdata 
 data(pollutionhealthdata)
-data(GGHB.IG)
-W.nb   	<- poly2nb(GGHB.IG)
+data(GGHB.IZ)
+W.nb   	<- poly2nb(GGHB.IZ)
 W      	<- nb2mat(W.nb, style = "B")
 pollutionhealthdata[1:4,]
 
@@ -21,7 +21,7 @@ model
 
 ##### Plot the predicted value in 2008 (disease mapping)
 pollutionhealthdata$predCAR<-model$fitted.values
-dat	    <- merge(x=GGHB.IG, y=pollutionhealthdata, by="IG", 
+dat	    <- merge(x=GGHB.IZ, y=pollutionhealthdata, by="IZ", 
                  all.x=FALSE, duplicateGeoms = TRUE) 
 dat2    <- st_as_sf(dat)
 
