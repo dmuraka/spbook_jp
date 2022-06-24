@@ -52,3 +52,4 @@ boxplot( predGLM_samp[,1:10],ylim=c(10,125))
 
 predLex_samp <-as.matrix( resLex$samples$fitted )
 boxplot( predLex_samp[,1:10],ylim=c(10,125))
+
