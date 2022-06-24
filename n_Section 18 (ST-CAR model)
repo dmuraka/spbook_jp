@@ -45,3 +45,4 @@ West    <- mat2listw(Wmedian2)
 coords  <-st_coordinates(st_centroid(dat2_sub))
 plot(st_geometry(dat2_sub), border="grey")
 plot(West, coords, add = TRUE, col="red",cex=0.01,lwd=1,xlim=xlim,ylim=ylim) 
+
