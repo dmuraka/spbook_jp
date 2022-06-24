@@ -1,3 +1,5 @@
+##### 2022/6/24: The code is fixed to match the updated CARBayesdata package.
+##### Please update 
 
 #install.packages( c("CARBayes","CARBayesdata", "RColorBrewer", "spdep", "sf") )
 library(CARBayes)
@@ -11,8 +13,8 @@ data(pollutionhealthdata)
 dat2007<-pollutionhealthdata[pollutionhealthdata$year==2007,]
 
 ##### Adjacency matrix
-data(GGHB.IG)
-W.nb   	<- poly2nb(GGHB.IG)
+data(GGHB.IZ)
+W.nb   	<- poly2nb(GGHB.IZ)         #### W.nb   	<- poly2nb(GGHB.IG)
 W      	<- nb2mat(W.nb, style = "B")	
 
 ##### Poisson CAR model (Leroux)
@@ -30,7 +32,8 @@ hist(resGLM$samples$beta[,4], xlim=c(0.0,0.07), ylim=c(0,120), 10, freq=FALSE, c
 ########## disease mapping ####################
 dat2007$predGLM  <-resGLM$fitted.values
 dat2007$predLex  <-resLex$fitted.values
-dat      <- merge(x=GGHB.IG, y=dat2007, by="IG", all.x=FALSE, duplicateGeoms = TRUE)
+dat      <- merge(x=GGHB.IZ, y=dat2007, by="IZ", all.x=FALSE, duplicateGeoms = TRUE)
+######### dat      <- merge(x=GGHB.IG, y=dat2007, by="IG", all.x=FALSE, duplicateGeoms = TRUE)
 
 ##### Observed number of cases
 dat2     <- st_as_sf(dat)
@@ -49,4 +52,3 @@ boxplot( predGLM_samp[,1:10],ylim=c(10,125))
 
 predLex_samp <-as.matrix( resLex$samples$fitted )
 boxplot( predLex_samp[,1:10],ylim=c(10,125))
-
