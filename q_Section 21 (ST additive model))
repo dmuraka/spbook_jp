@@ -39,8 +39,8 @@ pl
 
 ##### Cross validation
 oid  	<- sample(nrow(dat),20000)	# 無作為抽出
-odat 	<- dat[oid,]			# 観測地点のデータ
-mdat	<- dat[oid,]			# 予測結果のデータ
+odat 	<- dat[ oid,]			# 観測地点のデータ
+mdat	<- dat[-oid,]			# 予測結果のデータ
 mod2 	<- gam(log(price)~s(TLA)+garagesqft+s(wall,bs="re")+s(yrbuilt)+s(long,lat,yrbuilt,bs="gp"), data=dat)
 pred 	<- predict(mod2,newdata=mdat)
 
