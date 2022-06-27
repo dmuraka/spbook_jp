@@ -38,11 +38,11 @@ model2  <- ST.CARadaptive(formula = formula, family = "poisson",
 model2
 
 ##### Plot the estimated spatially dependent neighborhoods
-Wmedian <-model2$localised.structure$Wmedian
+Wmedian <- model2$localised.structure$Wmedian
 Wmedian[is.na(Wmedian)]<-0
-Wmedian2<- ifelse(Wmedian>0, 0.8,0)
+Wmedian2<- ifelse(Wmedian>0.8, 1, 0)
 West    <- mat2listw(Wmedian2)	
-coords  <-st_coordinates(st_centroid(dat2_sub))
+coords  <- st_coordinates(st_centroid(dat2_sub))
 plot(st_geometry(dat2_sub), border="grey")
 plot(West, coords, add = TRUE, col="red",cex=0.01,lwd=1,xlim=xlim,ylim=ylim) 
 
