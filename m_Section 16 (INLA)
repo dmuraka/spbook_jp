@@ -1,6 +1,17 @@
 
+######################## Install inla
+###### Inlaのインストールについては下記も参照ください：
+## https://www.r-inla.org/download-install
+
 install.packages("INLA",repos=c(getOption("repos"),INLA="https://inla.r-inla-download.org/R/stable"), dep=TRUE)
 ### or install.packages("INLA",repos=c(getOption("repos"),INLA="https://inla.r-inla-download.org/R/testing"), dep=TRUE)
+
+###  For Windows 
+if (!requireNamespace("BiocManager", quietly = TRUE))
+  install.packages("BiocManager")
+BiocManager::install(c("graph", "Rgraphviz"), dep=TRUE)
+
+######################## 
 
 library(INLA)
 names(inla.models()$likelihood)
