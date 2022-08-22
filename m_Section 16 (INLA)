@@ -150,7 +150,7 @@ meuse.sr <- SpatialPolygons(meuse.lst)
 segment	 <- inla.sp2segment(meuse.sr)
 mesh_b1	 <- inla.mesh.2d( loc=coords, max.edge = 300, interior =segment)
 
-##### [b] Constrained by the study area
+##### [b] Constrained by the study area 
 library(rgeos)
 coordinates(meuse.grid) = c("x", "y")
 gridded(meuse.grid) <- TRUE
