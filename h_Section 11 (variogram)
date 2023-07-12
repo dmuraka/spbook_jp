@@ -22,9 +22,9 @@ vario   <-variogram(formula,data=meuse_sf,cut=1300, width=50)
 plot(vario)
 
 ##### variogram model
-varioSph<-fit.variogram(vario, vgm(psill=0.015, "Sph", range=700, nugget=0.05))
-varioExp<-fit.variogram(vario, vgm(psill=0.015, "Exp", range=700, nugget=0.05))
-varioGau<-fit.variogram(vario, vgm(psill=0.015, "Gau", range=700, nugget=0.05))
+varioSph<-fit.variogram(vario, vgm(psill=0.15, "Sph", range=700, nugget=0.05))
+varioExp<-fit.variogram(vario, vgm(psill=0.15, "Exp", range=700, nugget=0.05))
+varioGau<-fit.variogram(vario, vgm(psill=0.15, "Gau", range=700, nugget=0.05))
 
 plot(vario,varioSph)
 plot(vario,varioExp)
