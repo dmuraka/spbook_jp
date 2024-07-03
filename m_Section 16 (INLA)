@@ -22,8 +22,8 @@ inla.list.models()
 ########### example 1: disease mapping #############
 ####################################################
 
-#install.packages( c( "spdep", "CARBayesdata", "sf", "RColorBrewer" ) )
-library(spdep);library(CARBayesdata)
+#install.packages( c( "spdep", "CARBayesdata", "sf", "RColorBrewer", fmesher ) )
+library(spdep);library(CARBayesdata);library(RColorBrewer);library(fmesher)
 
 ##### pollutionhealth data
 data(pollutionhealthdata)
@@ -42,7 +42,7 @@ summary(res)
 #### Poisson CAR model with group effects
 pollutionhealthdata$ID <- as.integer(pollutionhealthdata$IZ)	# zone ID
 formula	   <- observed ~  pm10 + jsa + offset(log(expected)) + 
-              f(ID, model = "besag", graph= W) + f(year, model="iid")
+  f(ID, model = "besag", graph= W) + f(year, model="iid")
 res   	   <- inla(formula=formula, data=pollutionhealthdata, family="nbinomial", 
                   control.compute = list(dic = TRUE))
 summary(res)
@@ -88,12 +88,20 @@ x0      <- meuse.grid[,c("dist","ffreq")]
 coords0 <- as.matrix( meuse.grid[,c("x","y")] )
 
 ##### Generate mesh
-mesh1 	<- inla.mesh.2d( loc=coords, max.edge = c(1000,1000))
-mesh2 	<- inla.mesh.2d( loc=coords, max.edge = c(300,1000))
-mesh3 	<- inla.mesh.2d( loc=coords, max.edge = c(300,300))
-mesh4 	<- inla.mesh.2d( loc=coords, max.edge = c(300,1000),cutoff=200)
-mesh5 	<- inla.mesh.2d( loc=coords, max.edge = c(300,1000),offset=c(-0.3,-0.1))
-mesh6 	<- inla.mesh.2d( loc=coords, max.edge = c(300,1000),offset=c(-0.1,-0.3))
+# This part is updated because use of fm_mesh_2d is now recommended 
+mesh1 	<- fm_mesh_2d( loc=coords, max.edge = c(1000,1000))
+mesh2 	<- fm_mesh_2d( loc=coords, max.edge = c(300,1000))
+mesh3 	<- fm_mesh_2d( loc=coords, max.edge = c(300,300))
+mesh4 	<- fm_mesh_2d( loc=coords, max.edge = c(300,1000),cutoff=200)
+mesh5 	<- fm_mesh_2d( loc=coords, max.edge = c(300,1000),offset=c(-0.3,-0.1))
+mesh6 	<- fm_mesh_2d( loc=coords, max.edge = c(300,1000),offset=c(-0.1,-0.3))
+### or 
+#mesh1 	<- inla.mesh.2d( loc=coords, max.edge = c(1000,1000))
+#mesh2 	<- inla.mesh.2d( loc=coords, max.edge = c(300,1000))
+#mesh3 	<- inla.mesh.2d( loc=coords, max.edge = c(300,300))
+#mesh4 	<- inla.mesh.2d( loc=coords, max.edge = c(300,1000),cutoff=200)
+#mesh5 	<- inla.mesh.2d( loc=coords, max.edge = c(300,1000),offset=c(-0.3,-0.1))
+#mesh6 	<- inla.mesh.2d( loc=coords, max.edge = c(300,1000),offset=c(-0.1,-0.3))
 
 plot(mesh1, asp=1);points(coords, col="red",pch=20,cex=0.7)
 plot(mesh2, asp=1);points(coords, col="red",pch=20,cex=0.7)
@@ -148,19 +156,25 @@ meuse.lst<- list(Polygons(list(Polygon(meuse.riv)),"meuse.riv"))
 meuse.sr <- SpatialPolygons(meuse.lst)
 
 segment	 <- inla.sp2segment(meuse.sr)
-mesh_b1	 <- inla.mesh.2d( loc=coords, max.edge = 300, interior =segment)
+mesh_b1	 <- fm_mesh_2d( loc=coords, max.edge = 300, interior =segment)
+#or mesh_b1	 <- inla.mesh.2d( loc=coords, max.edge = 300, interior =segment)
 
 ##### [b] Constrained by the study area 
-library(rgeos)
-coordinates(meuse.grid) = c("x", "y")
-gridded(meuse.grid) <- TRUE
-meuse.area <- gUnaryUnion(as(meuse.grid, "SpatialPolygons"))
-mesh_b2  <- inla.mesh.2d( loc=coords, max.edge = 300, boundary =meuse.area)
+# This part is uodated because rgeos package is retired
+
+meuse.grid_sp<-meuse.grid
+coordinates(meuse.grid_sp) = c("x", "y")
+gridded(meuse.grid_sp) <- TRUE
+meuse.grid_sp <- as(meuse.grid_sp, "SpatialPolygons")
+meuse.grid_sf <- st_as_sf(meuse.grid_sp)
+meuse.area_sf <- st_union(meuse.grid_sf)
+mesh_b2       <- fm_mesh_2d(loc = coords, max.edge = 300, boundary = fm_segm(meuse.area_sf))
+
 
 ##### Spatial prediction under [a] or [b] ##########
 
 ##### Pre-processing
-mesh2    <-mesh_b1 ## or mesh_b2
+mesh2    <-mesh_b2 ## or mesh_b2
 plot(mesh2, asp=1);points(coords, col="red",pch=20,cex=0.7)
 spde<- inla.spde2.matern(mesh=mesh2, alpha=1.5)
 
@@ -187,7 +201,5 @@ meuse.grid_sf$pred2   <-pred
 meuse.grid_sf$pred2_sd<-pred_sd
 
 ##### Plot the predicted values
-plot(meuse.grid_sf[, "pred2"], axes=TRUE, pch=15)
-plot(meuse.grid_sf[, "pred2_sd"], axes=TRUE, pch=15)
-
-
+plot(meuse.grid_sf[, "pred2"], axes=TRUE, pch=15,border=NA)
+plot(meuse.grid_sf[, "pred2_sd"], axes=TRUE, pch=15,border=NA)
