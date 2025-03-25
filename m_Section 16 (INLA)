@@ -88,20 +88,12 @@ x0      <- meuse.grid[,c("dist","ffreq")]
 coords0 <- as.matrix( meuse.grid[,c("x","y")] )
 
 ##### Generate mesh
-# This part is updated because use of fm_mesh_2d is now recommended 
-mesh1 	<- fm_mesh_2d( loc=coords, max.edge = c(1000,1000))
-mesh2 	<- fm_mesh_2d( loc=coords, max.edge = c(300,1000))
-mesh3 	<- fm_mesh_2d( loc=coords, max.edge = c(300,300))
-mesh4 	<- fm_mesh_2d( loc=coords, max.edge = c(300,1000),cutoff=200)
-mesh5 	<- fm_mesh_2d( loc=coords, max.edge = c(300,1000),offset=c(-0.3,-0.1))
-mesh6 	<- fm_mesh_2d( loc=coords, max.edge = c(300,1000),offset=c(-0.1,-0.3))
-### or 
-#mesh1 	<- inla.mesh.2d( loc=coords, max.edge = c(1000,1000))
-#mesh2 	<- inla.mesh.2d( loc=coords, max.edge = c(300,1000))
-#mesh3 	<- inla.mesh.2d( loc=coords, max.edge = c(300,300))
-#mesh4 	<- inla.mesh.2d( loc=coords, max.edge = c(300,1000),cutoff=200)
-#mesh5 	<- inla.mesh.2d( loc=coords, max.edge = c(300,1000),offset=c(-0.3,-0.1))
-#mesh6 	<- inla.mesh.2d( loc=coords, max.edge = c(300,1000),offset=c(-0.1,-0.3))
+mesh1 	<- inla.mesh.2d( loc=coords, max.edge = c(1000,1000))
+mesh2 	<- inla.mesh.2d( loc=coords, max.edge = c(300,1000))
+mesh3 	<- inla.mesh.2d( loc=coords, max.edge = c(300,300))
+mesh4 	<- inla.mesh.2d( loc=coords, max.edge = c(300,1000),cutoff=200)
+mesh5 	<- inla.mesh.2d( loc=coords, max.edge = c(300,1000),offset=c(-0.3,-0.1))
+mesh6 	<- inla.mesh.2d( loc=coords, max.edge = c(300,1000),offset=c(-0.1,-0.3))
 
 plot(mesh1, asp=1);points(coords, col="red",pch=20,cex=0.7)
 plot(mesh2, asp=1);points(coords, col="red",pch=20,cex=0.7)
@@ -148,30 +140,28 @@ plot(meuse.grid_sf[, "pred_sd"], axes=TRUE, pch=15)
 ##### Geostatistical modeling considering physical barrier #############
 
 ##### [a] Constrained by the Meuse river
+xran       <- range(mesh2$loc[,1])
+yran       <- range(mesh2$loc[,2])
+bcoords    <- rbind(c(xran[1], yran[1]),c(xran[2], yran[1]),
+                    c(xran[2], yran[2]),c(xran[1], yran[2]),
+                    c(xran[1], yran[1]))
+polygon    <- st_sfc(st_polygon(list(bcoords)))
+polygon_sf <- st_make_valid(st_sf(geometry = polygon))
+
 data(meuse.riv)
-meuse_sf  <- st_sfc(st_polygon(list(meuse.riv)))
-meuse_sf  <- st_sf(geometry = meuse_sf)
-
-xran      <- range(mesh2$loc[,1])
-yran      <- range(mesh2$loc[,2])
-bcoords   <- rbind(c(xran[1], yran[1]),c(xran[2], yran[1]),c(xran[2], yran[2]),c(xran[1], yran[2]),c(xran[1], yran[1]))
-box_sf    <- st_sfc(st_polygon(list(bcoords)))
-box_sf    <- st_make_valid(st_sf(geometry = box_sf))
-area_sf   <- st_difference(box_sf, meuse.sf)
-
-mesh_b1	  <- fm_mesh_2d( loc=coords, max.edge = 300, boundary =area_sf)
+meuse_sf   <- st_sfc(st_polygon(list(meuse.riv)))
+meuse_sf   <- st_sf(geometry = meuse_sf)
+meuse_sf2  <- st_difference(polygon_sf, meuse_sf)
+mesh_b1	   <- inla.mesh.2d( loc=coords, max.edge = 300, boundary=meuse_sf2)
 
 ##### [b] Constrained by the study area 
-# This part is uodated because rgeos package is retired
-
-meuse.grid_sp<-meuse.grid
+meuse.grid_sp <-meuse.grid
 coordinates(meuse.grid_sp) = c("x", "y")
 gridded(meuse.grid_sp) <- TRUE
 meuse.grid_sp <- as(meuse.grid_sp, "SpatialPolygons")
 meuse.grid_sf <- st_as_sf(meuse.grid_sp)
 meuse.area_sf <- st_union(meuse.grid_sf)
-mesh_b2       <- fm_mesh_2d(loc = coords, max.edge = 300, boundary = meuse.area_sf)
-
+mesh_b2       <- inla.mesh.2d(loc = coords, max.edge = 300, boundary = meuse.area_sf)
 
 ##### Spatial prediction under [a] or [b] ##########
 
