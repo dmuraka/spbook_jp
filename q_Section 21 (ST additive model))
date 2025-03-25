@@ -4,7 +4,7 @@ library(sp)
 library(spData)
 library(mgcViz)
 
-##### Lucas housing data
+##### Lucas housing data 
 data(house)
 coords<-coordinates(house)
 dat0  <-house@data
