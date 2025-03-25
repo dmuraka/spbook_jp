@@ -168,13 +168,13 @@ gridded(meuse.grid_sp) <- TRUE
 meuse.grid_sp <- as(meuse.grid_sp, "SpatialPolygons")
 meuse.grid_sf <- st_as_sf(meuse.grid_sp)
 meuse.area_sf <- st_union(meuse.grid_sf)
-mesh_b2       <- fm_mesh_2d(loc = coords, max.edge = 300, boundary = fm_segm(meuse.area_sf))
+mesh_b2       <- fm_mesh_2d(loc = coords, max.edge = 300, boundary = meuse.area_sf)
 
 
 ##### Spatial prediction under [a] or [b] ##########
 
 ##### Pre-processing
-mesh2    <-mesh_b2 ## or mesh_b2
+mesh2    <-mesh_b1 ## or mesh_b2
 plot(mesh2, asp=1);points(coords, col="red",pch=20,cex=0.7)
 spde<- inla.spde2.matern(mesh=mesh2, alpha=1.5)
 
