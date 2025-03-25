@@ -1,5 +1,5 @@
 
-# install.packages( c("spatialreg", "spdep", "car" ) )
+# install.packages( c("spatialreg", "spdep", "car" ) )　
 library(spatialreg)
 library(spdep)
 library(car)
