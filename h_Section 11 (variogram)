@@ -1,4 +1,4 @@
-# install.packages( c("gstat", "sf", "spData" ) )
+# install.packages( c("gstat", "sf", "spData" ) ) 
 library(gstat)
 library(sf)
 library(spData)
