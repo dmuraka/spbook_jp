@@ -44,7 +44,7 @@ mdat	<- dat[-oid,]			# 予測結果のデータ
 mod2 	<- gam(log(price)~s(TLA)+garagesqft+s(wall,bs="re")+s(yrbuilt)+s(long,lat,yrbuilt,bs="gp"), data=dat)
 pred 	<- predict(mod2,newdata=mdat)
 
-plot(log(odat$price), pred)
+plot(log(mdat$price), pred)
 abline(0, 1 ,col="red")
 
 ##### Model with t-distribution for the residuals
