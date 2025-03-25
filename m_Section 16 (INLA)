@@ -149,15 +149,17 @@ plot(meuse.grid_sf[, "pred_sd"], axes=TRUE, pch=15)
 
 ##### [a] Constrained by the Meuse river
 data(meuse.riv)
-xlim	   <- c(min(meuse.grid[,1])-100, max(meuse.grid[,1])+100)
-ylim	   <- c(min(meuse.grid[,2])-100, max(meuse.grid[,2])+100)
-meuse.riv<- meuse.riv[meuse.riv[,1]>xlim[1] & meuse.riv[,1]<xlim[2] & meuse.riv[,2]>ylim[1] & meuse.riv[,2]<ylim[2],]
-meuse.lst<- list(Polygons(list(Polygon(meuse.riv)),"meuse.riv"))
-meuse.sr <- SpatialPolygons(meuse.lst)
+meuse_sf  <- st_sfc(st_polygon(list(meuse.riv)))
+meuse_sf  <- st_sf(geometry = meuse_sf)
 
-segment	 <- inla.sp2segment(meuse.sr)
-mesh_b1	 <- fm_mesh_2d( loc=coords, max.edge = 300, interior =segment)
-#or mesh_b1	 <- inla.mesh.2d( loc=coords, max.edge = 300, interior =segment)
+xran      <- range(mesh2$loc[,1])
+yran      <- range(mesh2$loc[,2])
+bcoords   <- rbind(c(xran[1], yran[1]),c(xran[2], yran[1]),c(xran[2], yran[2]),c(xran[1], yran[2]),c(xran[1], yran[1]))
+box_sf    <- st_sfc(st_polygon(list(bcoords)))
+box_sf    <- st_make_valid(st_sf(geometry = box_sf))
+area_sf   <- st_difference(box_sf, meuse.sf)
+
+mesh_b1	  <- fm_mesh_2d( loc=coords, max.edge = 300, boundary =area_sf)
 
 ##### [b] Constrained by the study area 
 # This part is uodated because rgeos package is retired
