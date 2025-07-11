@@ -1,19 +1,33 @@
 
 ###### 2025/5/20: INLAパッケージの問題により、inla関数が動作しないことがあるようです ######
-###### ご迷惑をおかけしますが、修正ができましたら改めてお知らせします ######################
+###### 2025/7/12
+# 上記のバグは、以下の手順でINLAパッケージのバージョン24.06.27をインストールすると解決することがわかりました。
+# 環境はWindows11、R version 4.5.1、実施日は2025/7/12です。
+#
+#(手順1)https://inla.r-inla-download.org/R/stable/bin/windows/contrib/4.4/からINLA_24.06.27.zipをダウンロード(他のバージョンは動きませんでした)
+#(手順2)RStudioの場合、「Tool」→「Install packages」からINLA_24.06.27.zipを選択して、パッケージを読み込み
+#(手順3)library(INLA)を実行
+#
+# このバグの解決には以下のページが大変参考になりました：
+# RのINLAをインストールする(超短編)
+# https://qiita.com/okinasan0358/items/347d47bf156ed32ede5b
+#
+
+# 以下は通常のインストール方法ですが、2025/7/12時点では適切に動作しなかったため、上の手順に従ってください
+#install.packages("INLA",repos=c(getOption("repos"),INLA="https://inla.r-inla-download.org/R/stable"), dep=TRUE)
+# or install.packages("INLA",repos=c(getOption("repos"),INLA="https://inla.r-inla-download.org/R/testing"), dep=TRUE)
 
 
-######################## Install inla
-###### Inlaのインストールについては下記も参照ください：
-## https://www.r-inla.org/download-install
-
-install.packages("INLA",repos=c(getOption("repos"),INLA="https://inla.r-inla-download.org/R/stable"), dep=TRUE)
-### or install.packages("INLA",repos=c(getOption("repos"),INLA="https://inla.r-inla-download.org/R/testing"), dep=TRUE)
+#####################################################################
+######################## 以降は、通常通り実行 ########################
+if (!requireNamespace("fmesher", quietly = TRUE)) install.packages("fmesher")
 
 ###  For Windows 
 if (!requireNamespace("BiocManager", quietly = TRUE))
   install.packages("BiocManager")
 BiocManager::install(c("graph", "Rgraphviz"), dep=TRUE)
+
+
 
 ######################## 
 
