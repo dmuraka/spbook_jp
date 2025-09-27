@@ -4,9 +4,9 @@ library(CARBayes)
 library(sf)
 library(RColorBrewer)
 
-boston.tr <-st_read(system.file("shapes/boston_tracts.shp", package="spData"))
-w_nb      <-poly2nb( boston.tr )
-W         <-nb2mat(w_nb,style="B")
+boston.tr <- st_read(system.file("shapes/boston_tracts.gpkg",package="spData"), layer = "boston_tracts")
+w_nb      <- poly2nb( boston.tr )
+W         <- nb2mat(w_nb,style="B")
 
 formula   <- log(CMEDV) ~ CRIM + I(RM^2) + log(LSTAT)
 resLm	    <- S.glm(formula, data=boston.tr, family="gaussian", burnin=5000, n.sample=20000)
