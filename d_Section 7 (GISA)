@@ -1,4 +1,4 @@
-# install.packages(c("rgdal", "spdep", "RColorBrewer", "NipponMap")) 
+# install.packages(c("sf", "spdep", "RColorBrewer", "NipponMap")) 
 library(rgdal)
 library(spdep)
 library(RColorBrewer)
